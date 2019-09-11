@@ -23,6 +23,7 @@ class Object extends SplBean
     protected $jti;//JWT ID用于标识该JWT
     protected $signature;
     protected $status = 0;
+    protected $data;
 
 
     protected function initialize(): void
@@ -199,6 +200,20 @@ class Object extends SplBean
     {
         return $this->status;
     }
+
+    /**
+     * @param mixed $data
+     */
+    public function setData($data): void
+    {
+        $this->data = $data;
+    }
+
+    public function getData()
+    {
+        return $this->data;
+    }
+
 
     function __toString()
     {
