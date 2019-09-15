@@ -33,24 +33,24 @@ class Jwt
         return $this;
     }
 
-    public function publish():Object
+    public function publish():JwtObject
     {
-        $obj = new Object();
+        $obj = new JwtObject();
         $obj->setAlg($this->alg);
         return $obj;
     }
 
-    public function decode(?string $raw):?Object
+    public function decode(?string $raw):?JwtObject
     {
         $raw = json_decode(base64_decode(urldecode($raw)),true);
         if(empty($raw['signature'])){
             throw new Exception("signature is empty");
         }
-        return new Object($raw,true);
+        return new JwtObject($raw,true);
     }
 
 
-    public function __signature(Object $object):?string
+    public function __signature(JwtObject $object):?string
     {
         $array = $object->toArray();
         unset($array['signature']);

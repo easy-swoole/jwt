@@ -7,7 +7,7 @@ namespace EasySwoole\Jwt;
 use EasySwoole\Spl\SplBean;
 use EasySwoole\Utility\Random;
 
-class Object extends SplBean
+class JwtObject extends SplBean
 {
     const STATUS_OK = 1;
     const STATUS_SIGNATURE_ERROR = -1;

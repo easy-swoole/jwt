@@ -20,7 +20,7 @@ composer require easyswoole/jwt
 
 require 'vendor/autoload.php';
 
-/** @var \EasySwoole\Jwt\Object $obj */
+/** @var \EasySwoole\Jwt\JwtObject $obj */
 //设置加密方式 支持AES 与 HMACSHA256 设置密钥默认为EasySwoole
 $obj = \EasySwoole\Jwt\Jwt::getInstance()->algMethod('AES')->setSecretKey('测试呀')->publish();
 
@@ -44,7 +44,7 @@ $jwt =  \EasySwoole\Jwt\Jwt::getInstance();
 
 try{
     //验证token,解密并验证签名验证过期时间
-    /** @var \EasySwoole\Jwt\Object $result */
+    /** @var \EasySwoole\Jwt\JwtObject $result */
     $result = $jwt -> decode($token);
     
     var_dump($result);
