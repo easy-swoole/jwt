@@ -11,7 +11,6 @@ class Jwt
 
     private static $instance;
     private $secretKey = 'EasySwoole';
-    private $alg = self::ALG_METHOD_HMACSHA256;
 
     public static function getInstance():Jwt
     {
@@ -27,16 +26,9 @@ class Jwt
         return $this;
     }
 
-    function algMethod(string $method):Jwt
-    {
-        $this->alg = $method;
-        return $this;
-    }
-
     public function publish():JwtObject
     {
         $obj = new JwtObject();
-        $obj->setAlg($this->alg);
         return $obj;
     }
 

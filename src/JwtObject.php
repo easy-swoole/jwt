@@ -13,7 +13,7 @@ class JwtObject extends SplBean
     const STATUS_SIGNATURE_ERROR = -1;
     const STATUS_EXPIRED = -2;
 
-    protected $alg;//加密方式
+    protected $alg = Jwt::ALG_METHOD_HMACSHA256;//加密方式
     protected $iss = "EasySwoole";//发行人
     protected $exp; //到期时间
     protected $sub;//主题
