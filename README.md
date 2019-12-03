@@ -14,86 +14,75 @@ composer require easyswoole/jwt
 * easyswoole 组件包括 spl 与 utility
 ~~~
 
-## 使用示例
-~~~php
-<?php
+## 生成token
 
-require 'vendor/autoload.php';
+```php
+use EasySwoole\Jwt\Jwt;
 
-/** @var \EasySwoole\Jwt\JwtObject $obj */
-//设置加密方式 支持AES 与 HMACSHA256 设置密钥默认为EasySwoole
-$obj = \EasySwoole\Jwt\Jwt::getInstance()->algMethod('AES')->setSecretKey('测试呀')->publish();
+$jwtObject = Jwt::getInstance()
+    ->setSecretKey('easyswoole') // 秘钥
+    ->publish();
 
-$data = '测试用例';
+$jwtObject->setAlg('HMACSHA256'); // 加密方式
+$jwtObject->setAud('user'); // 用户
+$jwtObject->setExp(time()+3600); // 过期时间
+$jwtObject->setIat(time()); // 发布时间
+$jwtObject->setIss('easyswoole'); // 发行人
+$jwtObject->setJti(md5(time())); // jwt id 用于标识该jwt
+$jwtObject->setNbf(time()+60*5); // 在此之前不可用
+$jwtObject->setSub('主题'); // 主题
 
-### 设置Payload ###
+// 自定义数据
+$jwtObject->setData([
+    'other_info'
+]);
 
-//设置过期时间 默认为当前时间加2小时
-$obj->setExp(time()+3600);
-//设置签发时间,默认time()
-$obj->setIat(time());
-//设置签发者.默认为EasySwoole
-$obj->setIss('测试');
+// 最终生成的token
+$token = $jwtObject->__toString();
+```
 
-$token = $obj->__toString();
+## 解析token
 
-var_dump($token);
+```php
+use EasySwoole\Jwt\Jwt;
 
-//decode token
-$jwt =  \EasySwoole\Jwt\Jwt::getInstance();
+$token = "eyJhbGciOiJITUFDU0hBMjU2IiwiaXNzIjoiZWFzeXN3b29sZSIsImV4cCI6MTU3MzgzNTIxMSwic3ViIjoi5Li76aKYIiwibmJmIjoxNTczODMxOTExLCJhdWQiOiJ1c2VyIiwiaWF0IjoxNTczODMxNjExLCJqdGkiOiJjYWJhZmNiMWIxZTkxNTU3YzIxMDUxYTZiYTQ0MTliMiIsInNpZ25hdHVyZSI6IjZlNTI1ZjJkOTFjZGYzMjBmODE1NmEwMzE1MDhiNmU0ZDQ0YzhkNGFhYzZjNmU1YzMzMTNjMDIyMGJjYjJhZjQiLCJzdGF0dXMiOjEsImRhdGEiOlsib3RoZXJfaW5mbyJdfQ%3D%3D";
 
-try{
-    //验证token,解密并验证签名验证过期时间
-    /** @var \EasySwoole\Jwt\JwtObject $result */
-    $result = $jwt -> decode($token);
+try {
+    $jwtObject = Jwt::getInstance()->decode($token);
+
+    $status = $jwtObject->getStatus();
     
-    var_dump($result);
-    
-    switch ($result->getStatus())
+    // 如果encode设置了秘钥,decode 的时候要指定
+    // $status = $jwt->setSecretKey('easyswoole')->decode($token)
+
+    switch ($status)
     {
+        case -1:
+            echo 'token无效';
+            break;
         case  1:
             echo '验证通过';
+            $jwtObject->getAlg();
+            $jwtObject->getAud();
+            $jwtObject->getData();
+            $jwtObject->getExp();
+            $jwtObject->getIat();
+            $jwtObject->getIss();
+            $jwtObject->getNbf();
+            $jwtObject->getJti();
+            $jwtObject->getSub();
+            $jwtObject->getSignature();
+            $jwtObject->getProperty('alg');
             break;
         case  2:
             echo '验证失败';
             break;
         case  3:
             echo 'token过期';
-            break;
+        break;
     }
-    //根据解密之后的结果完善业务逻辑
-}catch (\Exception $e){
+} catch (\EasySwoole\Jwt\Exception $e) {
 
 }
-
-~~~
-### 输出结果:
-~~~
-☁  jwt [master] ⚡  php test.php
-string(470) "eyJhbGciOiJBRVMiLCJpc3MiOiLmtYvor5UiLCJleHAiOjE1NjgyODg5MTMsInN1YiI6bnVsbCwibmJmIjoxNTY4Mjg1MzEzLCJhdWQiOm51bGwsImlhdCI6MTU2ODI4NTMxMywianRpIjoicDlhQVo0RnhxbyIsInNpZ25hdHVyZSI6IjZ2dUxMZE1ZcjRsQUtxWE55Uy9tVUlKb3hxV1FwblZXRGZFWkFXcUtNbXFzV002UENkbTZJZDlhZ0EzL3J6Y3pxd295UWdrR291eGdLdVlUTThnNVluZ2NZVnhGeFErYVY4U1lqZ256dGZYMlN2cXBYNnhDaVBNQnZ5K3c1Qi9Dc2I0VzBDelEwMXQ1STNFeVo5Uy9PRjBtQzdhaTN6TElIdkhvQkxRbEQvM3pmY09maHhnVUZGSXlLOG1adERYKyIsInN0YXR1cyI6MSwiZGF0YSI6bnVsbH0%3D"
-object(EasySwoole\Jwt\Object)#4 (11) {
-  ["alg":protected]=>
-  string(3) "AES"
-  ["iss":protected]=>
-  string(6) "测试"
-  ["exp":protected]=>
-  int(1568288913)
-  ["sub":protected]=>
-  NULL
-  ["nbf":protected]=>
-  int(1568285313)
-  ["aud":protected]=>
-  NULL
-  ["iat":protected]=>
-  int(1568285313)
-  ["jti":protected]=>
-  string(10) "p9aAZ4Fxqo"
-  ["signature":protected]=>
-  string(192) "6vuLLdMYr4lAKqXNyS/mUIJoxqWQpnVWDfEZAWqKMmqsWM6PCdm6Id9agA3/rzczqwoyQgkGouxgKuYTM8g5YngcYVxFxQ+aV8SYjgnztfX2SvqpX6xCiPMBvy+w5B/Csb4W0CzQ01t5I3EyZ9S/OF0mC7ai3zLIHvHoBLQlD/3zfcOfhxgUFFIyK8mZtDX+"
-  ["status":protected]=>
-  int(1)
-  ["data":protected]=>
-  NULL
-}
-验证通过%   
-~~~
+```
