@@ -13,14 +13,14 @@ class JwtObject extends SplBean
     const STATUS_SIGNATURE_ERROR = -1;
     const STATUS_EXPIRED = -2;
 
-    protected $alg = Jwt::ALG_METHOD_HMACSHA256;//加密方式
-    protected $iss = "EasySwoole";//发行人
-    protected $exp; //到期时间
-    protected $sub;//主题
-    protected $nbf;//在此之前不可用
-    protected $aud;//用户
-    protected $iat;//发布时间
-    protected $jti;//JWT ID用于标识该JWT
+    protected $alg = Jwt::ALG_METHOD_HMACSHA256; // 加密方式
+    protected $iss = "EasySwoole"; // 发行人
+    protected $exp; // 到期时间
+    protected $sub; // 主题
+    protected $nbf; // 在此之前不可用
+    protected $aud; // 用户
+    protected $iat; // 发布时间
+    protected $jti; // JWT ID用于标识该JWT
     protected $signature;
     protected $status = 0;
     protected $data;
@@ -41,7 +41,7 @@ class JwtObject extends SplBean
             $this->jti = Random::character(10);
         }
 
-        /*
+        /**
          * 说明是解包的
          */
         if(!empty($this->signature)){
@@ -68,9 +68,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $alg
      */
-    public function setAlg($alg): void
+    public function setAlg($alg): self
     {
         $this->alg = $alg;
+
+        return $this;
     }
 
     /**
@@ -84,9 +86,11 @@ class JwtObject extends SplBean
     /**
      * @param string $iss
      */
-    public function setIss(string $iss): void
+    public function setIss(string $iss): self
     {
         $this->iss = $iss;
+
+        return $this;
     }
 
     /**
@@ -100,9 +104,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $exp
      */
-    public function setExp($exp): void
+    public function setExp($exp): self
     {
         $this->exp = $exp;
+
+        return $this;
     }
 
     /**
@@ -116,9 +122,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $sub
      */
-    public function setSub($sub): void
+    public function setSub($sub): self
     {
         $this->sub = $sub;
+
+        return $this;
     }
 
     /**
@@ -132,9 +140,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $nbf
      */
-    public function setNbf($nbf): void
+    public function setNbf($nbf): self
     {
         $this->nbf = $nbf;
+
+        return $this;
     }
 
     /**
@@ -148,9 +158,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $aud
      */
-    public function setAud($aud): void
+    public function setAud($aud): self
     {
         $this->aud = $aud;
+
+        return $this;
     }
 
     /**
@@ -164,9 +176,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $iat
      */
-    public function setIat($iat): void
+    public function setIat($iat): self
     {
         $this->iat = $iat;
+
+        return $this;
     }
 
     /**
@@ -180,9 +194,11 @@ class JwtObject extends SplBean
     /**
      * @param mixed $jti
      */
-    public function setJti($jti): void
+    public function setJti($jti): self
     {
         $this->jti = $jti;
+
+        return $this;
     }
 
     /**
@@ -204,16 +220,17 @@ class JwtObject extends SplBean
     /**
      * @param mixed $data
      */
-    public function setData($data): void
+    public function setData($data): self
     {
         $this->data = $data;
+
+        return $this;
     }
 
     public function getData()
     {
         return $this->data;
     }
-
 
     function __toString()
     {
