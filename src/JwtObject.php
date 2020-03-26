@@ -1,20 +1,19 @@
 <?php
 
-
 namespace EasySwoole\Jwt;
-
 
 use EasySwoole\Spl\SplBean;
 use EasySwoole\Utility\Random;
 
 class JwtObject extends SplBean
 {
-    const STATUS_OK = 1;
-    const STATUS_SIGNATURE_ERROR = -1;
-    const STATUS_EXPIRED = -2;
+    public const STATUS_OK = 1;
+    public const STATUS_SIGNATURE_ERROR = -1;
+    public const STATUS_EXPIRED = -2;
+
 
     protected $alg = Jwt::ALG_METHOD_HMACSHA256; // 加密方式
-    protected $iss = "EasySwoole"; // 发行人
+    protected $iss = 'EasySwoole'; // 发行人
     protected $exp; // 到期时间
     protected $sub; // 主题
     protected $nbf; // 在此之前不可用
@@ -25,6 +24,9 @@ class JwtObject extends SplBean
     protected $status = 0;
     protected $data;
 
+    protected $secretKey;
+    protected $header;
+    protected $payload;
 
     protected function initialize(): void
     {
@@ -41,11 +43,10 @@ class JwtObject extends SplBean
             $this->jti = Random::character(10);
         }
 
-        /**
-         * 说明是解包的
-         */
+        // 解包：验证签名
         if(!empty($this->signature)){
-            if($this->signature !== Jwt::getInstance()->__signature($this)){
+            $signature = $this->signature();
+            if($this->signature !== $signature){
                 $this->status = self::STATUS_SIGNATURE_ERROR;
                 return;
             }
@@ -67,6 +68,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $alg
+     * @return JwtObject
      */
     public function setAlg($alg): self
     {
@@ -85,6 +87,7 @@ class JwtObject extends SplBean
 
     /**
      * @param string $iss
+     * @return JwtObject
      */
     public function setIss(string $iss): self
     {
@@ -103,6 +106,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $exp
+     * @return JwtObject
      */
     public function setExp($exp): self
     {
@@ -121,6 +125,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $sub
+     * @return JwtObject
      */
     public function setSub($sub): self
     {
@@ -139,6 +144,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $nbf
+     * @return JwtObject
      */
     public function setNbf($nbf): self
     {
@@ -157,6 +163,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $aud
+     * @return JwtObject
      */
     public function setAud($aud): self
     {
@@ -175,6 +182,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $iat
+     * @return JwtObject
      */
     public function setIat($iat): self
     {
@@ -193,6 +201,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $jti
+     * @return JwtObject
      */
     public function setJti($jti): self
     {
@@ -219,6 +228,7 @@ class JwtObject extends SplBean
 
     /**
      * @param mixed $data
+     * @return JwtObject
      */
     public function setData($data): self
     {
@@ -232,10 +242,98 @@ class JwtObject extends SplBean
         return $this->data;
     }
 
-    function __toString()
+    /**
+     * @return mixed
+     */
+    public function getSecretKey()
     {
-        $this->signature = Jwt::getInstance()->__signature($this);
-        $array = $this->toArray();
-        return urlencode(base64_encode(json_encode($array,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE)));
+        return $this->secretKey;
+    }
+
+    /**
+     * @param mixed $secretKey
+     * @return JwtObject
+     */
+    public function setSecretKey($secretKey): self
+    {
+        $this->secretKey = $secretKey;
+        return $this;
+    }
+
+    public function setHeader()
+    {
+        //TODO:: 为了兼容老版本做了映射
+        $algMap = [
+            Jwt::ALG_METHOD_HMACSHA256 => Jwt::ALG_METHOD_HS256,
+            Jwt::ALG_METHOD_AES => Jwt::ALG_METHOD_AES,
+            Jwt::ALG_METHOD_HS256 => Jwt::ALG_METHOD_HS256
+        ];
+
+        $header = json_encode([
+            'alg' => $algMap[$this->getAlg()],
+            'typ' => 'JWT'
+        ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+        $this->header = Encryption::getInstance()->base64UrlEncode($header);
+    }
+
+    public function getHeader()
+    {
+        return $this->header;
+    }
+
+    public function setPayload()
+    {
+        $payload = json_encode([
+            'exp' => $this->getExp(),
+            'sub' => $this->getSub(),
+            'nbf' => $this->getNbf(),
+            'aud' => $this->getAud(),
+            'iat' => $this->getIat(),
+            'jti' => $this->getJti(),
+            'status' => $this->getStatus(),
+            'data' => $this->getData()
+        ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+
+        $this->payload = Encryption::getInstance()->base64UrlEncode($payload);
+    }
+
+    public function getPayload()
+    {
+        return $this->payload;
+    }
+
+    public function signature():?string
+    {
+
+        $this->setHeader();
+        $this->setPayload();
+
+        $content = $this->getHeader() . '.' . $this->getPayload();
+
+        switch ($this->getAlg()){
+            case Jwt::ALG_METHOD_HMACSHA256:
+                $signature = Encryption::getInstance()->base64UrlEncode(
+                    hash_hmac('sha256', $content, $this->getSecretKey(), true)
+                );
+                break;
+            case Jwt::ALG_METHOD_HS256:
+                $signature = Encryption::getInstance()->base64UrlEncode(
+                    hash_hmac('sha256', $content, $this->getSecretKey(), true)
+                );
+                break;
+            case Jwt::ALG_METHOD_AES:
+                $signature = Encryption::getInstance()->base64UrlEncode(
+                    openssl_encrypt($content, 'AES-128-ECB', $this->getSecretKey())
+                );
+                break;
+        }
+
+        return $signature;
+    }
+
+    public function __toString()
+    {
+        $this->signature = $this->signature();
+        return $this->header . '.' . $this->payload . '.' . $this->signature;
     }
 }
