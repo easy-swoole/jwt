@@ -6,11 +6,14 @@ namespace EasySwoole\Jwt;
 
 class Jwt
 {
-    const ALG_METHOD_AES = 'AES';
-    const ALG_METHOD_HMACSHA256 = 'HMACSHA256';
-
     private static $instance;
+
     private $secretKey = 'EasySwoole';
+
+
+    public const ALG_METHOD_AES = 'AES';
+    public const ALG_METHOD_HMACSHA256 = 'HMACSHA256';
+    public const ALG_METHOD_HS256 = 'HS256';
 
     public static function getInstance():Jwt
     {
@@ -20,7 +23,7 @@ class Jwt
         return self::$instance;
     }
 
-    function setSecretKey(string $key):Jwt
+    public function setSecretKey(string $key):Jwt
     {
         $this->secretKey = $key;
         return $this;
@@ -28,33 +31,46 @@ class Jwt
 
     public function publish():JwtObject
     {
-        $obj = new JwtObject();
-        return $obj;
+        return new JwtObject(['secretKey' => $this->secretKey]);
     }
 
     public function decode(?string $raw):?JwtObject
     {
-        $raw = json_decode(base64_decode(urldecode($raw)),true);
-        if(empty($raw['signature'])){
-            throw new Exception("signature is empty");
+        $items = explode('.', $raw);
+
+        // token格式
+        if (count($items) !== 3) {
+            throw new Exception('Token format error!');
         }
-        return new JwtObject($raw,true);
+
+        // 验证header
+        $header = Encryption::getInstance()->base64UrlDecode($items[0]);
+        $header = json_decode($header, true);
+        if (empty($header)) {
+            throw new Exception('Token header is empty!');
+        }
+
+        // 验证payload
+        $payload = Encryption::getInstance()->base64UrlDecode($items[1]);
+        $payload = json_decode($payload, true);
+        if (empty($header)) {
+            throw new Exception('Token payload is empty!');
+        }
+
+        if(empty($items[2])){
+            throw new Exception('signature is empty');
+        }
+
+        $jwtObjConfig = array_merge(
+            $header,
+            $payload,
+            [
+                'signature' => $items[2],
+                'secretKey' => $this->secretKey
+            ]
+        );
+
+        return new JwtObject($jwtObjConfig,true);
     }
 
-
-    public function __signature(JwtObject $object):?string
-    {
-        $array = $object->toArray();
-        unset($array['signature']);
-        $json = json_encode($array,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
-        switch ($object->getAlg()){
-            case self::ALG_METHOD_HMACSHA256:{
-                return hash_hmac('sha256', $json, $this->secretKey);
-            }
-            case self::ALG_METHOD_AES:{
-                return openssl_encrypt($json, 'AES-128-ECB', $this->secretKey);
-            }
-        }
-        return null;
-    }
 }
