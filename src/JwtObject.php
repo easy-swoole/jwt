@@ -290,6 +290,7 @@ class JwtObject extends SplBean
             'aud' => $this->getAud(),
             'iat' => $this->getIat(),
             'jti' => $this->getJti(),
+            'iss' => $this->getIss(),
             'status' => $this->getStatus(),
             'data' => $this->getData()
         ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
