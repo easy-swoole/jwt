@@ -45,7 +45,12 @@ class JwtObject extends SplBean
 
         // 解包：验证签名
         if(!empty($this->signature)){
-            $signature = $this->signature();
+            $signature = (new Signature([
+                'secretKey' => $this->getSecretKey(),
+                'header' => $this->getHeader(),
+                'payload' => $this->getPayload(),
+                'alg' => $this->getAlg()
+            ]))->__toString();
             if($this->signature !== $signature){
                 $this->status = self::STATUS_SIGNATURE_ERROR;
                 return;
@@ -260,7 +265,30 @@ class JwtObject extends SplBean
         return $this;
     }
 
-    public function setHeader()
+    public function setHeader($header)
+    {
+        $this->header = $header;
+        return $this;
+
+    }
+
+    public function getHeader()
+    {
+        return $this->header;
+    }
+
+    public function setPayload($payload)
+    {
+       $this->payload = $payload;
+       return $this;
+    }
+
+    public function getPayload()
+    {
+        return $this->payload;
+    }
+
+    public function __toString()
     {
         //TODO:: 为了兼容老版本做了映射
         $algMap = [
@@ -272,17 +300,9 @@ class JwtObject extends SplBean
         $header = json_encode([
             'alg' => $algMap[$this->getAlg()],
             'typ' => 'JWT'
-        ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+        ]);
         $this->header = Encryption::getInstance()->base64UrlEncode($header);
-    }
 
-    public function getHeader()
-    {
-        return $this->header;
-    }
-
-    public function setPayload()
-    {
         $payload = json_encode([
             'exp' => $this->getExp(),
             'sub' => $this->getSub(),
@@ -294,47 +314,15 @@ class JwtObject extends SplBean
             'status' => $this->getStatus(),
             'data' => $this->getData()
         ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
-
         $this->payload = Encryption::getInstance()->base64UrlEncode($payload);
-    }
 
-    public function getPayload()
-    {
-        return $this->payload;
-    }
+        $this->signature = (new Signature([
+            'secretKey' => $this->getSecretKey(),
+            'header' => $this->getHeader(),
+            'payload' => $this->payload,
+            'alg' => $this->getAlg()
+        ]))->__toString();
 
-    public function signature():?string
-    {
-
-        $this->setHeader();
-        $this->setPayload();
-
-        $content = $this->getHeader() . '.' . $this->getPayload();
-
-        switch ($this->getAlg()){
-            case Jwt::ALG_METHOD_HMACSHA256:
-                $signature = Encryption::getInstance()->base64UrlEncode(
-                    hash_hmac('sha256', $content, $this->getSecretKey(), true)
-                );
-                break;
-            case Jwt::ALG_METHOD_HS256:
-                $signature = Encryption::getInstance()->base64UrlEncode(
-                    hash_hmac('sha256', $content, $this->getSecretKey(), true)
-                );
-                break;
-            case Jwt::ALG_METHOD_AES:
-                $signature = Encryption::getInstance()->base64UrlEncode(
-                    openssl_encrypt($content, 'AES-128-ECB', $this->getSecretKey())
-                );
-                break;
-        }
-
-        return $signature;
-    }
-
-    public function __toString()
-    {
-        $this->signature = $this->signature();
         return $this->header . '.' . $this->payload . '.' . $this->signature;
     }
 }
