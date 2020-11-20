@@ -58,13 +58,15 @@ class Jwt
         }
 
         if(empty($items[2])){
-            throw new Exception('signature is empty');
+            throw new Exception('Signature is empty!');
         }
 
         $jwtObjConfig = array_merge(
             $header,
             $payload,
             [
+                'header' => $items[0],
+                'payload' => $items[1],
                 'signature' => $items[2],
                 'secretKey' => $this->secretKey
             ]
