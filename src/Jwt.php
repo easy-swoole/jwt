@@ -14,6 +14,7 @@ class Jwt
     public const ALG_METHOD_AES = 'AES';
     public const ALG_METHOD_HMACSHA256 = 'HMACSHA256';
     public const ALG_METHOD_HS256 = 'HS256';
+    public const ALG_METHOD_RS256 = 'RS256';
 
     public static function getInstance():Jwt
     {

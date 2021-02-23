@@ -2,8 +2,10 @@
 
 namespace EasySwoole\Jwt;
 
+use DomainException;
 use EasySwoole\Spl\SplBean;
 use EasySwoole\Utility\Random;
+use UnexpectedValueException;
 
 class JwtObject extends SplBean
 {
@@ -28,39 +30,70 @@ class JwtObject extends SplBean
     protected $header;
     protected $payload;
 
+    protected $algMap = [
+        Jwt::ALG_METHOD_AES => 'AES-128-ECB',
+        Jwt::ALG_METHOD_RS256 => 'SHA256'
+    ];
+
     protected function initialize(): void
     {
-        if(empty($this->nbf)){
+        if (empty($this->nbf)) {
             $this->nbf = time();
         }
-        if(empty($this->iat)){
+        if (empty($this->iat)) {
             $this->iat = time();
         }
-        if(empty($this->exp)){
+        if (empty($this->exp)) {
             $this->exp = time() + 7200;
         }
-        if(empty($this->jti)){
+        if (empty($this->jti)) {
             $this->jti = Random::character(10);
         }
 
         // 解包：验证签名
-        if(!empty($this->signature)){
-            $signature = (new Signature([
-                'secretKey' => $this->getSecretKey(),
-                'header' => $this->getHeader(),
-                'payload' => $this->getPayload(),
-                'alg' => $this->getAlg()
-            ]))->__toString();
-            if($this->signature !== $signature){
+        if (!empty($this->signature)) {
+//            $signature = (new Signature([
+//                'secretKey' => $this->getSecretKey(),
+//                'header' => $this->getHeader(),
+//                'payload' => $this->getPayload(),
+//                'alg' => $this->getAlg()
+//            ]))->__toString();
+            if (false === $this->verify()) {
                 $this->status = self::STATUS_SIGNATURE_ERROR;
                 return;
             }
-            if(time() > $this->exp){
+            if (time() > $this->exp) {
                 $this->status = self::STATUS_EXPIRED;
                 return;
             }
         }
         $this->status = self::STATUS_OK;
+    }
+
+    /**
+     * @return bool
+     */
+    protected function verify(): bool
+    {
+        $content = $this->getHeader() . "." . $this->getPayload();
+
+        if (in_array($this->getAlg(), [Jwt::ALG_METHOD_HMACSHA256, Jwt::ALG_METHOD_HS256])) {
+            $hash = hash_hmac('SHA256', $content, $this->getSecretKey(), true);
+            return hash_equals($this->getSignature(), Encryption::getInstance()->base64UrlEncode($hash));
+        }
+
+        if (in_array($this->getAlg(), [Jwt::ALG_METHOD_AES, Jwt::ALG_METHOD_RS256])) {
+            $signatureAlg = $this->algMap[$this->getAlg()] ?? null;
+            if (!empty($signatureAlg)) {
+                $status = openssl_verify($content, Encryption::getInstance()->base64UrlDecode($this->getSignature()), $this->getSecretKey(), $signatureAlg);
+                if ($status < 0) {
+                    throw new DomainException('OpenSSL error: ' . openssl_error_string());
+                }
+                return $status === 1;
+            }
+        }
+
+        throw new UnexpectedValueException('Algorithm not supported, alg: ' . $this->getAlg());
     }
 
     /**
@@ -279,8 +312,8 @@ class JwtObject extends SplBean
 
     public function setPayload($payload)
     {
-       $this->payload = $payload;
-       return $this;
+        $this->payload = $payload;
+        return $this;
     }
 
     public function getPayload()
@@ -313,7 +346,7 @@ class JwtObject extends SplBean
             'iss' => $this->getIss(),
             'status' => $this->getStatus(),
             'data' => $this->getData()
-        ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $this->payload = Encryption::getInstance()->base64UrlEncode($payload);
 
         $this->signature = (new Signature([

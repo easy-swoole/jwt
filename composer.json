@@ -13,8 +13,10 @@
   ],
   "require": {
     "php": ">=7.1.0",
+    "ext-json": "*",
     "ext-openssl": ">=1.0.0",
     "easyswoole/spl": "^1.2",
+    "easyswoole/component": "^2.0",
     "easyswoole/utility": "^1.1"
   },
   "require-dev": {
@@ -27,7 +29,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "EasySwoole\\Jwt\\Tests\\": "test/"
+      "EasySwoole\\Jwt\\Tests\\": "tests/"
     }
   }
 }
