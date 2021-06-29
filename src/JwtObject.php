@@ -22,15 +22,18 @@ class JwtObject extends SplBean
     protected $aud; // 用户
     protected $iat; // 发布时间
     protected $jti; // JWT ID用于标识该JWT
-    protected $signature;
+    protected $signature; // 加密的token
     protected $status = 0;
-    protected $data;
+    protected $data; // 自定义数据
+    protected $prefix; // token前缀
 
     protected $secretKey;
     protected $header;
     protected $payload;
 
+
     protected $algMap = [
+        Jwt::ALG_METHOD_HMACSHA256 => 'HMAC-SHA256',
         Jwt::ALG_METHOD_AES => 'AES-128-ECB',
         Jwt::ALG_METHOD_RS256 => 'SHA256'
     ];
@@ -50,15 +53,10 @@ class JwtObject extends SplBean
             $this->jti = Random::character(10);
         }
 
+
         // 解包：验证签名
         if (!empty($this->signature)) {
-//            $signature = (new Signature([
-//                'secretKey' => $this->getSecretKey(),
-//                'header' => $this->getHeader(),
-//                'payload' => $this->getPayload(),
-//                'alg' => $this->getAlg()
-//            ]))->__toString();
-            if (false === $this->verify()) {
+            if (!$this->verify()) {
                 $this->status = self::STATUS_SIGNATURE_ERROR;
                 return;
             }
@@ -292,13 +290,13 @@ class JwtObject extends SplBean
      * @param mixed $secretKey
      * @return JwtObject
      */
-    public function setSecretKey($secretKey): self
+    public function setSecretKey(string $secretKey): self
     {
         $this->secretKey = $secretKey;
         return $this;
     }
 
-    public function setHeader($header)
+    public function setHeader($header): JwtObject
     {
         $this->header = $header;
         return $this;
@@ -310,7 +308,7 @@ class JwtObject extends SplBean
         return $this->header;
     }
 
-    public function setPayload($payload)
+    public function setPayload($payload): JwtObject
     {
         $this->payload = $payload;
         return $this;
@@ -321,22 +319,34 @@ class JwtObject extends SplBean
         return $this->payload;
     }
 
+    public function setPrefix(string $prefix): JwtObject
+    {
+        $this->prefix = $prefix . ' ';
+        return $this;
+    }
+
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
+
     public function __toString()
     {
         //TODO:: 为了兼容老版本做了映射
         $algMap = [
             Jwt::ALG_METHOD_HMACSHA256 => Jwt::ALG_METHOD_HS256,
             Jwt::ALG_METHOD_AES => Jwt::ALG_METHOD_AES,
-            Jwt::ALG_METHOD_HS256 => Jwt::ALG_METHOD_HS256
+            Jwt::ALG_METHOD_HS256 => Jwt::ALG_METHOD_HS256,
+            Jwt::ALG_METHOD_RS256 => Jwt::ALG_METHOD_RS256,
         ];
 
-        $header = json_encode([
+        $header       = json_encode([
             'alg' => $algMap[$this->getAlg()],
             'typ' => 'JWT'
         ]);
         $this->header = Encryption::getInstance()->base64UrlEncode($header);
 
-        $payload = json_encode([
+        $payload       = json_encode([
             'exp' => $this->getExp(),
             'sub' => $this->getSub(),
             'nbf' => $this->getNbf(),
@@ -355,7 +365,10 @@ class JwtObject extends SplBean
             'payload' => $this->payload,
             'alg' => $this->getAlg()
         ]))->__toString();
-
-        return $this->header . '.' . $this->payload . '.' . $this->signature;
+        if (empty($this->prefix)) {
+            return $this->header . '.' . $this->payload . '.' . $this->signature;
+        } else {
+            return $this->prefix . $this->header . '.' . $this->payload . '.' . $this->signature;
+        }
     }
 }

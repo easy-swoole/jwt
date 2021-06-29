@@ -18,6 +18,9 @@ class Signature extends SplBean
     protected $payload;
     protected $alg;
 
+    /**
+     * php 7.4以下不支持在__toString()抛出异常
+     */
     public function __toString()
     {
         $content = $this->header . '.' . $this->payload;
@@ -42,12 +45,8 @@ class Signature extends SplBean
                 }
                 break;
             default:
-                /**
-                 * php 7.4以下不支持在__toString()抛出异常
-                 */
                 $signature = "";
         }
-
         return $signature;
     }
 
