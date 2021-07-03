@@ -327,7 +327,8 @@ class JwtObject extends SplBean
         $algMap = [
             Jwt::ALG_METHOD_HMACSHA256 => Jwt::ALG_METHOD_HS256,
             Jwt::ALG_METHOD_AES => Jwt::ALG_METHOD_AES,
-            Jwt::ALG_METHOD_HS256 => Jwt::ALG_METHOD_HS256
+            Jwt::ALG_METHOD_HS256 => Jwt::ALG_METHOD_HS256,
+            Jwt::ALG_METHOD_RS256 => Jwt::ALG_METHOD_RS256
         ];
 
         $header = json_encode([

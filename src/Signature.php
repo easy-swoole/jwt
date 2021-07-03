@@ -39,6 +39,8 @@ class Signature extends SplBean
                 $success = openssl_sign($content, $signature, $this->secretKey, 'SHA256');
                 if (!$success) {
                     $signature = "";
+                } else {
+                    $signature = Encryption::getInstance()->base64UrlEncode($signature);
                 }
                 break;
             default:
