@@ -3,12 +3,15 @@
 基于easyswoole组件实现的json web token
 
 ## 安装
+
 可以通过composer安装
+
 ~~~ 
 composer require easyswoole/jwt 
 ~~~
 
 ## 依赖
+
 ~~~
 * PHP version >= PHP 7.1
 * easyswoole 组件包括 spl 与 utility
@@ -31,7 +34,7 @@ $jwtObject->setIss('easyswoole'); // 发行人
 $jwtObject->setJti(md5(time())); // jwt id 用于标识该jwt
 $jwtObject->setNbf(time()+60*5); // 在此之前不可用
 $jwtObject->setSub('主题'); // 主题
-
+$jwtObject->setPrefix('Bearer'); // token前缀(可选)
 // 自定义数据
 $jwtObject->setData([
     'other_info'
@@ -39,6 +42,8 @@ $jwtObject->setData([
 
 // 最终生成的token
 $token = $jwtObject->__toString();
+// 如果设置了setPrefix将会在生成的token加入对应的前缀,decode的时候会自动截取还原token
+// Bearer +token (前缀与token间有一个空格，请注意)
 ```
 
 ## 解析token
@@ -73,6 +78,7 @@ try {
             $jwtObject->getJti();
             $jwtObject->getSub();
             $jwtObject->getSignature();
+            $jwtObject->getPrefix();
             $jwtObject->getProperty('alg');
             break;
         case  2:

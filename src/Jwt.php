@@ -9,6 +9,7 @@ class Jwt
     private static $instance;
 
     private $secretKey = 'EasySwoole';
+    protected $prefix;
 
 
     public const ALG_METHOD_AES = 'AES';
@@ -16,27 +17,36 @@ class Jwt
     public const ALG_METHOD_HS256 = 'HS256';
     public const ALG_METHOD_RS256 = 'RS256';
 
-    public static function getInstance():Jwt
+    public static function getInstance(): Jwt
     {
-        if(!isset(self::$instance)){
+        if (!isset(self::$instance)) {
             self::$instance = new Jwt();
         }
         return self::$instance;
     }
 
-    public function setSecretKey(string $key):Jwt
+    public function setSecretKey(string $key): Jwt
     {
         $this->secretKey = $key;
         return $this;
     }
 
-    public function publish():JwtObject
+    public function publish(): JwtObject
     {
         return new JwtObject(['secretKey' => $this->secretKey]);
     }
 
-    public function decode(?string $raw):?JwtObject
+    /**
+     * @throws Exception
+     */
+    public function decode(string $raw): ?JwtObject
     {
+        if (strpos($raw, ' ')) {
+            $prefix       = explode(' ', $raw);
+            $this->prefix = $prefix[0];
+            $raw          = str_replace($this->prefix . ' ', '', $raw);
+        }
+
         $items = explode('.', $raw);
 
         // token格式
@@ -58,7 +68,7 @@ class Jwt
             throw new Exception('Token payload is empty!');
         }
 
-        if(empty($items[2])){
+        if (empty($items[2])) {
             throw new Exception('Signature is empty!');
         }
 
@@ -70,10 +80,10 @@ class Jwt
                 'payload' => $items[1],
                 'signature' => $items[2],
                 'secretKey' => $this->secretKey
-            ]
+            ],
+            ['prefix' => $this->prefix]
         );
-
-        return new JwtObject($jwtObjConfig,true);
+        return new JwtObject($jwtObjConfig, true);
     }
 
 }
