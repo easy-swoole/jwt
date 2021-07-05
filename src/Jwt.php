@@ -11,6 +11,7 @@ class Jwt
     private $secretKey = 'EasySwoole';
     protected $prefix;
 
+    private $alg = Jwt::ALG_METHOD_HS256; // 默认加密方式
 
     public const ALG_METHOD_AES = 'AES';
     public const ALG_METHOD_HMACSHA256 = 'HMACSHA256';
@@ -28,6 +29,12 @@ class Jwt
     public function setSecretKey(string $key): Jwt
     {
         $this->secretKey = $key;
+        return $this;
+    }
+
+    public function setAlg(string $alg): Jwt
+    {
+        $this->alg = $alg;
         return $this;
     }
 
@@ -79,7 +86,8 @@ class Jwt
                 'header' => $items[0],
                 'payload' => $items[1],
                 'signature' => $items[2],
-                'secretKey' => $this->secretKey
+                'secretKey' => $this->secretKey,
+                'alg' => $this->alg
             ],
             ['prefix' => $this->prefix]
         );
