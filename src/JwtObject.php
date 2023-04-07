@@ -3,11 +3,10 @@
 namespace EasySwoole\Jwt;
 
 use DomainException;
-use EasySwoole\Spl\SplBean;
 use EasySwoole\Utility\Random;
 use UnexpectedValueException;
 
-class JwtObject extends SplBean
+class JwtObject extends \stdClass
 {
     public const STATUS_OK = 1;
     public const STATUS_SIGNATURE_ERROR = -1;
@@ -37,6 +36,14 @@ class JwtObject extends SplBean
         Jwt::ALG_METHOD_AES => 'AES-128-ECB',
         Jwt::ALG_METHOD_RS256 => 'SHA256'
     ];
+
+    function __construct(array $data)
+    {
+        foreach ($data as $key => $item){
+            $this->{$key} = $item;
+        }
+        $this->initialize();
+    }
 
     protected function initialize(): void
     {
@@ -77,13 +84,13 @@ class JwtObject extends SplBean
 
         if (in_array($this->getAlg(), [Jwt::ALG_METHOD_HMACSHA256, Jwt::ALG_METHOD_HS256])) {
             $hash = hash_hmac('SHA256', $content, $this->getSecretKey(), true);
-            return hash_equals($this->getSignature(), Encryption::getInstance()->base64UrlEncode($hash));
+            return hash_equals($this->getSignature(), Encryption::base64UrlEncode($hash));
         }
 
         if (in_array($this->getAlg(), [Jwt::ALG_METHOD_AES, Jwt::ALG_METHOD_RS256])) {
             $signatureAlg = $this->algMap[$this->getAlg()] ?? null;
             if (!empty($signatureAlg)) {
-                $status = openssl_verify($content, Encryption::getInstance()->base64UrlDecode($this->getSignature()), $this->getSecretKey(), $signatureAlg);
+                $status = openssl_verify($content, Encryption::base64UrlDecode($this->getSignature()), $this->getSecretKey(), $signatureAlg);
                 if ($status < 0) {
                     throw new DomainException('OpenSSL error: ' . openssl_error_string());
                 }
@@ -344,7 +351,7 @@ class JwtObject extends SplBean
             'alg' => $algMap[$this->getAlg()],
             'typ' => 'JWT'
         ]);
-        $this->header = Encryption::getInstance()->base64UrlEncode($header);
+        $this->header = Encryption::base64UrlEncode($header);
 
         $payload       = json_encode([
             'exp' => $this->getExp(),
@@ -357,7 +364,7 @@ class JwtObject extends SplBean
             'status' => $this->getStatus(),
             'data' => $this->getData()
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $this->payload = Encryption::getInstance()->base64UrlEncode($payload);
+        $this->payload = Encryption::base64UrlEncode($payload);
 
         $this->signature = (new Signature([
             'secretKey' => $this->getSecretKey(),

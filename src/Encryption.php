@@ -13,12 +13,12 @@ class Encryption
 {
     use Singleton;
 
-    public function base64UrlEncode($content)
+    public static function base64UrlEncode($content)
     {
         return str_replace('=', '', strtr(base64_encode($content), '+/', '-_'));
     }
 
-    public function base64UrlDecode($content)
+    public static function base64UrlDecode($content)
     {
         $remainder = strlen($content) % 4;
         if ($remainder) {

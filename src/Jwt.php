@@ -62,14 +62,14 @@ class Jwt
         }
 
         // 验证header
-        $header = Encryption::getInstance()->base64UrlDecode($items[0]);
+        $header = Encryption::base64UrlDecode($items[0]);
         $header = json_decode($header, true);
         if (empty($header)) {
             throw new Exception('Token header is empty!');
         }
 
         // 验证payload
-        $payload = Encryption::getInstance()->base64UrlDecode($items[1]);
+        $payload = Encryption::base64UrlDecode($items[1]);
         $payload = json_decode($payload, true);
         if (empty($payload)) {
             throw new Exception('Token payload is empty!');
@@ -91,7 +91,7 @@ class Jwt
             ],
             ['prefix' => $this->prefix]
         );
-        return new JwtObject($jwtObjConfig, true);
+        return new JwtObject($jwtObjConfig);
     }
 
 }
